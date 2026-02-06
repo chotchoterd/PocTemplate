@@ -6,12 +6,17 @@
             สร้างเทมเพลตเอกสาร
         </h1>
         <div class="header-actions">
-            <p-button label="Preview HTML" icon="pi pi-eye" [outlined]="!showPreview || pdfUrl" severity="secondary" (onClick)="togglePreview()"> </p-button>
-            <p-button label="Preview PDF" icon="pi pi-file-pdf" [outlined]="!pdfUrl" severity="info" [loading]="isGeneratingPDF" (onClick)="generatePDF()"> </p-button>
-            <p-button label="ดาวน์โหลด PDF" icon="pi pi-download" severity="success" [outlined]="true" (onClick)="downloadPDF()"> </p-button>
-            <p-button label="โหลดเทมเพลต" icon="pi pi-upload" severity="help" [outlined]="true" (onClick)="loadTemplate()"> </p-button>
+            <p-button label="Preview HTML" icon="pi pi-eye" [outlined]="!showPreview || pdfUrl" severity="secondary"
+                (onClick)="togglePreview()"> </p-button>
+            <p-button label="Preview PDF" icon="pi pi-file-pdf" [outlined]="!pdfUrl" severity="info"
+                [loading]="isGeneratingPDF" (onClick)="generatePDF()"> </p-button>
+            <p-button label="ดาวน์โหลด PDF" icon="pi pi-download" severity="success" [outlined]="true"
+                (onClick)="downloadPDF()"> </p-button>
+            <p-button label="โหลดเทมเพลต" icon="pi pi-upload" severity="help" [outlined]="true"
+                (onClick)="loadTemplate()"> </p-button>
             <p-button label="บันทึก" icon="pi pi-save" severity="primary" (onClick)="saveTemplate()"> </p-button>
-            <p-button label="รีเซ็ต" icon="pi pi-refresh" severity="warn" [outlined]="true" (onClick)="resetTemplate()"> </p-button>
+            <p-button label="รีเซ็ต" icon="pi pi-refresh" severity="warn" [outlined]="true" (onClick)="resetTemplate()">
+            </p-button>
         </div>
     </div>
 
@@ -46,7 +51,9 @@
                     <p-tabpanels>
                         <p-tabpanel *ngFor="let category of getCategories()" [value]="category">
                             <div class="variables-list">
-                                <div *ngFor="let variable of getVariablesByCategory(category)" class="variable-item" (click)="insertVariable(variable.key)" pTooltip="คลิกเพื่อแทรกตัวแปร: {{variable.key}}" tooltipPosition="right">
+                                <div *ngFor="let variable of getVariablesByCategory(category)" class="variable-item"
+                                    (click)="insertVariable(variable.key)"
+                                    pTooltip="คลิกเพื่อแทรกตัวแปร: {{variable.key}}" tooltipPosition="right">
                                     <div class="variable-content">
                                         <div class="variable-label">
                                             <i class="pi pi-tag"></i>
@@ -91,7 +98,8 @@
                 </div>
 
                 <div class="editor-area">
-                    <p-editor [(ngModel)]="editorData" [style]="{'height':'500px'}" (onTextChange)="onEditorTextChange()">
+                    <p-editor [(ngModel)]="editorData" [style]="{'height':'500px'}"
+                        (onTextChange)="onEditorTextChange()">
                         <ng-template pTemplate="header">
                             <span class="ql-formats">
                                 <select class="ql-header">
@@ -134,7 +142,9 @@
                 </div>
 
                 <div class="editor-footer">
-                    <p-message severity="info" text="💡 ใช้ {{variable_name}} เพื่อแทรกตัวแปร หรือคลิกจากรายการด้านซ้าย จัดรูปแบบข้อความได้ด้วย Editor ด้านบน"> </p-message>
+                    <p-message severity="info"
+                        text="💡 ใช้ {{variable_name}} เพื่อแทรกตัวแปร หรือคลิกจากรายการด้านซ้าย จัดรูปแบบข้อความได้ด้วย Editor ด้านบน">
+                    </p-message>
                 </div>
             </div>
 
@@ -150,7 +160,9 @@
                 </div>
 
                 <div class="preview-footer">
-                    <p-message severity="success" text="✅ นี่คือตัวอย่างเอกสารที่แทนค่าตัวแปรแล้ว กด Preview PDF เพื่อดูเป็น PDF หรือ ดาวน์โหลด PDF ได้เลย"> </p-message>
+                    <p-message severity="success"
+                        text="✅ นี่คือตัวอย่างเอกสารที่แทนค่าตัวแปรแล้ว กด Preview PDF เพื่อดูเป็น PDF หรือ ดาวน์โหลด PDF ได้เลย">
+                    </p-message>
                 </div>
             </div>
         </div>
@@ -165,7 +177,8 @@
             <div class="preview-values">
                 <div *ngFor="let variable of variables" class="value-field">
                     <label>{{ variable.label }}</label>
-                    <input type="text" pInputText [(ngModel)]="exampleValues[variable.key]" (ngModelChange)="updatePreview()" [placeholder]="variable.exampleValue" />
+                    <input type="text" pInputText [(ngModel)]="exampleValues[variable.key]"
+                        (ngModelChange)="updatePreview()" [placeholder]="variable.exampleValue" />
                 </div>
             </div>
         </div>

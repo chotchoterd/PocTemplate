@@ -21,7 +21,16 @@ interface TemplateVariable {
 @Component({
     selector: 'app-poc-template',
     standalone: true,
-    imports: [CommonModule, FormsModule, EditorModule, ButtonModule, MessageModule, TabsModule, TooltipModule, InputTextModule],
+    imports: [
+        CommonModule,
+        FormsModule,
+        EditorModule,
+        ButtonModule,
+        MessageModule,
+        TabsModule,
+        TooltipModule,
+        InputTextModule
+    ],
     templateUrl: './poc-template.html',
     styleUrl: './poc-template.scss'
 })
@@ -39,7 +48,7 @@ export class PocTemplate {
     <p style="text-indent: 2em;">จึงเรียนมาเพื่อโปรดทราบ</p>
     <br/><br/><br/>
     <p style="text-align: center;">ลงชื่อ .......................................</p>
-    <p style="text-align: center;">(.......................................</p>
+    <p style="text-align: center;">(.......................................)</p>
     <p style="text-align: center;">ผู้มีอำนาจลงนาม</p>
     <p style="text-align: center;">บริษัท {{company_name}}</p>
   `;
@@ -67,7 +76,7 @@ export class PocTemplate {
     public exampleValues: { [key: string]: string } = {};
     variable_name: any;
 
-    constructor(private sanitizer: DomSanitizer) {}
+    constructor(private sanitizer: DomSanitizer) { }
 
     ngOnInit() {
         this.variables.forEach((variable) => {
@@ -90,10 +99,11 @@ export class PocTemplate {
 
     updatePreview() {
         let preview = this.editorData;
-
+        // console.log('Updating preview with editor data:', this.editorData);
+        // แทนที่ตัวแปรด้วยค่าจริงเฉยๆ ไม่มี highlight
         Object.keys(this.exampleValues).forEach((key) => {
             const regex = new RegExp(`{{${key}}}`, 'g');
-            preview = preview.replace(regex, `<span class="variable-highlight">${this.exampleValues[key]}</span>`);
+            preview = preview.replace(regex, this.exampleValues[key]);
         });
 
         this.previewData = preview;
@@ -107,56 +117,242 @@ export class PocTemplate {
         }
     }
 
+    // ฟังก์ชันแปลง Quill classes เป็น inline styles
+    private convertQuillToInlineStyles(element: HTMLElement): HTMLElement {
+        const cloned = element.cloneNode(true) as HTMLElement;
+
+        const processElement = (el: Element) => {
+            if (el instanceof HTMLElement) {
+                const computed = window.getComputedStyle(el);
+
+                // แปลง Quill alignment classes
+                if (el.classList.contains('ql-align-center')) {
+                    el.style.textAlign = 'center';
+                } else if (el.classList.contains('ql-align-right')) {
+                    el.style.textAlign = 'right';
+                } else if (el.classList.contains('ql-align-justify')) {
+                    el.style.textAlign = 'justify';
+                }
+
+                // แปลง Quill indent
+                if (el.classList.contains('ql-indent-1')) {
+                    el.style.paddingLeft = '3em';
+                } else if (el.classList.contains('ql-indent-2')) {
+                    el.style.paddingLeft = '6em';
+                }
+
+                // คัดลอก computed styles ที่สำคัญ
+                const importantStyles = [
+                    'text-align',
+                    'text-indent',
+                    'font-weight',
+                    'font-style',
+                    'font-size',
+                    'font-family',
+                    'color',
+                    'background-color',
+                    'padding-left',
+                    'padding-right',
+                    'padding-top',
+                    'padding-bottom',
+                    'margin-bottom',
+                    'line-height',
+                    'text-decoration'
+                ];
+
+                importantStyles.forEach(prop => {
+                    const value = computed.getPropertyValue(prop);
+                    if (value &&
+                        value !== 'none' &&
+                        value !== 'normal' &&
+                        value !== 'auto' &&
+                        value !== 'rgba(0, 0, 0, 0)' &&
+                        value !== 'transparent') {
+                        el.style.setProperty(prop, value);
+                    }
+                });
+
+                // บังคับ styles เฉพาะ tags
+                if (el.tagName === 'P') {
+                    if (!el.style.lineHeight) el.style.lineHeight = '1.8';
+                    if (!el.style.marginBottom) el.style.marginBottom = '1em';
+                    if (!el.style.color || el.style.color === 'rgb(0, 0, 0)') {
+                        el.style.color = '#000000';
+                    }
+                }
+
+                if (el.tagName === 'STRONG') {
+                    el.style.fontWeight = 'bold';
+                    if (!el.style.color) el.style.color = '#000000';
+                }
+
+                if (el.tagName.match(/^H[1-6]$/)) {
+                    el.style.marginTop = '1.5rem';
+                    el.style.marginBottom = '1rem';
+                    el.style.fontWeight = 'bold';
+                    if (!el.style.color) el.style.color = '#000000';
+                }
+
+                // บังคับลบ background ที่ไม่ต้องการ
+                if (el.tagName === 'SPAN' && !el.style.backgroundColor) {
+                    el.style.backgroundColor = 'transparent';
+                }
+            }
+
+            // Process children recursively
+            Array.from(el.children).forEach(child => processElement(child));
+        };
+
+        processElement(cloned);
+        return cloned;
+    }
+
     async generatePDF() {
         this.isGeneratingPDF = true;
         this.showPreview = true;
         this.updatePreview();
 
-        // รอให้ DOM update
         setTimeout(async () => {
             try {
                 const element = this.pdfPreviewElement.nativeElement;
 
-                // ใช้ html2canvas-pro ที่รองรับ modern CSS
-                const canvas = await html2canvas(element, {
+                // Clone และแปลง styles
+                const clonedElement = element.cloneNode(true) as HTMLElement;
+
+                // แปลง computed styles เป็น inline styles ทั้งหมด
+                const copyStyles = (source: Element, target: Element) => {
+                    if (source instanceof HTMLElement && target instanceof HTMLElement) {
+                        const computed = window.getComputedStyle(source);
+
+                        // คัดลอกทุก style ที่สำคัญ
+                        const stylesToCopy = [
+                            'font-family', 'font-size', 'font-weight', 'font-style',
+                            'color', 'background-color',
+                            'text-align', 'text-indent', 'text-decoration',
+                            'line-height', 'letter-spacing',
+                            'padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left',
+                            'margin', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left',
+                            'border', 'border-radius',
+                            'width', 'height',
+                            'display', 'vertical-align'
+                        ];
+
+                        stylesToCopy.forEach(prop => {
+                            const value = computed.getPropertyValue(prop);
+                            if (value && value !== 'none' && value !== 'normal') {
+                                target.style.setProperty(prop, value, 'important');
+                            }
+                        });
+
+                        // แปลง Quill classes เป็น inline styles
+                        if (target.classList.contains('ql-align-center')) {
+                            target.style.setProperty('text-align', 'center', 'important');
+                        }
+                        if (target.classList.contains('ql-align-right')) {
+                            target.style.setProperty('text-align', 'right', 'important');
+                        }
+                        if (target.classList.contains('ql-align-justify')) {
+                            target.style.setProperty('text-align', 'justify', 'important');
+                        }
+                        if (target.classList.contains('ql-indent-1')) {
+                            target.style.setProperty('padding-left', '3em', 'important');
+                        }
+                        if (target.classList.contains('ql-indent-2')) {
+                            target.style.setProperty('padding-left', '6em', 'important');
+                        }
+
+                        // บังคับสีดำสำหรับข้อความ
+                        if (!target.style.color || target.style.color === 'rgb(0, 0, 0)') {
+                            target.style.setProperty('color', '#000000', 'important');
+                        }
+                    }
+
+                    // Recursive สำหรับ children
+                    Array.from(source.children).forEach((child, index) => {
+                        if (target.children[index]) {
+                            copyStyles(child, target.children[index]);
+                        }
+                    });
+                };
+
+                copyStyles(element, clonedElement);
+
+                // สร้าง temp container
+                const tempContainer = document.createElement('div');
+                tempContainer.style.cssText = `
+                position: fixed;
+                left: -99999px;
+                top: 0;
+                width: 210mm;
+                background: #ffffff;
+                padding: 25mm 20mm;
+                font-family: 'Sarabun', 'Sukhumvit Set', sans-serif;
+                font-size: 14px;
+                line-height: 1.8;
+                color: #000000;
+            `;
+                tempContainer.appendChild(clonedElement);
+                document.body.appendChild(tempContainer);
+
+                // รอให้ render
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // สร้าง canvas
+                const canvas = await html2canvas(clonedElement, {
                     scale: 2,
                     useCORS: true,
                     allowTaint: false,
                     backgroundColor: '#ffffff',
                     logging: false,
-                    windowWidth: element.scrollWidth,
-                    windowHeight: element.scrollHeight,
-                    onclone: (clonedDoc: Document) => {
-                        // ปรับแต่ง cloned document ก่อน render
-                        const clonedElement = clonedDoc.querySelector('.document-preview');
-                        if (clonedElement) {
-                            (clonedElement as HTMLElement).style.boxShadow = 'none';
-                        }
-                    }
+                    width: clonedElement.scrollWidth,
+                    height: clonedElement.scrollHeight,
+                    windowWidth: clonedElement.scrollWidth,
+                    windowHeight: clonedElement.scrollHeight
                 });
 
-                // สร้าง PDF
-                const imgWidth = 210; // A4 width in mm
-                const pageHeight = 297; // A4 height in mm
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                // ลบ temp container
+                document.body.removeChild(tempContainer);
 
-                const pdf = new jsPDF('p', 'mm', 'a4');
+                // สร้าง PDF
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4',
+                    compress: true
+                });
+
+                const imgWidth = 210;
+                const pageHeight = 297;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
                 let heightLeft = imgHeight;
                 let position = 0;
 
                 // หน้าแรก
-                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
+                pdf.addImage(
+                    canvas.toDataURL('image/jpeg', 0.95),
+                    'JPEG',
+                    0,
+                    position,
+                    imgWidth,
+                    imgHeight
+                );
                 heightLeft -= pageHeight;
 
                 // หน้าถัดไป (ถ้ามี)
                 while (heightLeft >= 0) {
                     position = heightLeft - imgHeight;
                     pdf.addPage();
-                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
+                    pdf.addImage(
+                        canvas.toDataURL('image/jpeg', 0.95),
+                        'JPEG',
+                        0,
+                        position,
+                        imgWidth,
+                        imgHeight
+                    );
                     heightLeft -= pageHeight;
                 }
 
-                // สร้าง URL สำหรับแสดง PDF
                 const pdfBlob = pdf.output('blob');
                 const pdfBlobUrl = URL.createObjectURL(pdfBlob);
                 this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(pdfBlobUrl);
@@ -180,26 +376,104 @@ export class PocTemplate {
         setTimeout(async () => {
             try {
                 const element = this.pdfPreviewElement.nativeElement;
+                const clonedElement = element.cloneNode(true) as HTMLElement;
 
-                const canvas = await html2canvas(element, {
+                // ใช้ฟังก์ชัน copyStyles เหมือนกับ generatePDF
+                const copyStyles = (source: Element, target: Element) => {
+                    if (source instanceof HTMLElement && target instanceof HTMLElement) {
+                        const computed = window.getComputedStyle(source);
+
+                        const stylesToCopy = [
+                            'font-family', 'font-size', 'font-weight', 'font-style',
+                            'color', 'background-color',
+                            'text-align', 'text-indent', 'text-decoration',
+                            'line-height', 'letter-spacing',
+                            'padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left',
+                            'margin', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left',
+                            'border', 'border-radius',
+                            'width', 'height',
+                            'display', 'vertical-align'
+                        ];
+
+                        stylesToCopy.forEach(prop => {
+                            const value = computed.getPropertyValue(prop);
+                            if (value && value !== 'none' && value !== 'normal') {
+                                target.style.setProperty(prop, value, 'important');
+                            }
+                        });
+
+                        if (target.classList.contains('ql-align-center')) {
+                            target.style.setProperty('text-align', 'center', 'important');
+                        }
+                        if (target.classList.contains('ql-align-right')) {
+                            target.style.setProperty('text-align', 'right', 'important');
+                        }
+                        if (target.classList.contains('ql-align-justify')) {
+                            target.style.setProperty('text-align', 'justify', 'important');
+                        }
+                        if (target.classList.contains('ql-indent-1')) {
+                            target.style.setProperty('padding-left', '3em', 'important');
+                        }
+                        if (target.classList.contains('ql-indent-2')) {
+                            target.style.setProperty('padding-left', '6em', 'important');
+                        }
+
+                        if (!target.style.color || target.style.color === 'rgb(0, 0, 0)') {
+                            target.style.setProperty('color', '#000000', 'important');
+                        }
+                    }
+
+                    Array.from(source.children).forEach((child, index) => {
+                        if (target.children[index]) {
+                            copyStyles(child, target.children[index]);
+                        }
+                    });
+                };
+
+                copyStyles(element, clonedElement);
+
+                const tempContainer = document.createElement('div');
+                tempContainer.style.cssText = `
+                position: fixed;
+                left: -99999px;
+                top: 0;
+                width: 210mm;
+                background: #ffffff;
+                padding: 25mm 20mm;
+                font-family: 'Sarabun', 'Sukhumvit Set', sans-serif;
+                font-size: 14px;
+                line-height: 1.8;
+                color: #000000;
+            `;
+                tempContainer.appendChild(clonedElement);
+                document.body.appendChild(tempContainer);
+
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                const canvas = await html2canvas(clonedElement, {
                     scale: 2,
                     useCORS: true,
                     allowTaint: false,
                     backgroundColor: '#ffffff',
                     logging: false,
-                    onclone: (clonedDoc: Document) => {
-                        const clonedElement = clonedDoc.querySelector('.document-preview');
-                        if (clonedElement) {
-                            (clonedElement as HTMLElement).style.boxShadow = 'none';
-                        }
-                    }
+                    width: clonedElement.scrollWidth,
+                    height: clonedElement.scrollHeight,
+                    windowWidth: clonedElement.scrollWidth,
+                    windowHeight: clonedElement.scrollHeight
+                });
+
+                document.body.removeChild(tempContainer);
+
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4',
+                    compress: true
                 });
 
                 const imgWidth = 210;
                 const pageHeight = 297;
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-                const pdf = new jsPDF('p', 'mm', 'a4');
                 let heightLeft = imgHeight;
                 let position = 0;
 
@@ -213,13 +487,11 @@ export class PocTemplate {
                     heightLeft -= pageHeight;
                 }
 
-                // ดาวน์โหลด
-                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
                 const filename = `เอกสาร_${timestamp}.pdf`;
                 pdf.save(filename);
 
                 alert('✅ ดาวน์โหลด PDF สำเร็จ!');
-                console.log('✅ Downloaded:', filename);
             } catch (error) {
                 console.error('❌ Error downloading PDF:', error);
                 alert('เกิดข้อผิดพลาดในการดาวน์โหลด PDF: ' + (error as Error).message);
@@ -236,7 +508,6 @@ export class PocTemplate {
 
         localStorage.setItem('documentTemplate', JSON.stringify(template));
         alert('✅ บันทึกเทมเพลตสำเร็จ!');
-        console.log('💾 Saved template:', template);
     }
 
     loadTemplate() {
@@ -248,10 +519,8 @@ export class PocTemplate {
                 this.exampleValues = template.variables;
                 this.updatePreview();
                 alert('✅ โหลดเทมเพลตสำเร็จ!');
-                console.log('📂 Loaded template:', template);
             } catch (error) {
-                alert('❌ ไม่สามารถโหลดเทมเพลตได้ กรุณาลองใหม่');
-                console.error('Error loading template:', error);
+                alert('❌ ไม่สามารถโหลดเทมเพลตได้');
             }
         } else {
             alert('❌ ไม่พบเทมเพลตที่บันทึกไว้');
@@ -260,15 +529,10 @@ export class PocTemplate {
 
     resetTemplate() {
         if (confirm('⚠️ ต้องการรีเซ็ตเทมเพลตหรือไม่?\n\nการเปลี่ยนแปลงที่ยังไม่ได้บันทึกจะหายไป')) {
-            this.editorData = `
-                <h2 style="text-align: center;">เทมเพลตเอกสาร</h2>
-                <p>เริ่มต้นสร้างเทมเพลตของคุณที่นี่...</p>
-                <p>คลิกตัวแปรจากด้านซ้ายเพื่อแทรกข้อมูล</p>
-            `;
+            this.editorData = '<h2 style="text-align: center;">เทมเพลตเอกสาร</h2><p>เริ่มต้นสร้างเทมเพลตของคุณที่นี่...</p>';
             this.updatePreview();
             this.pdfUrl = null;
             this.showPreview = false;
-            console.log('🔄 Template reset');
         }
     }
 
@@ -282,7 +546,6 @@ export class PocTemplate {
 
     closePDFViewer() {
         if (this.pdfUrl) {
-            // Revoke object URL to free memory
             const url = (this.pdfUrl as any).changingThisBreaksApplicationSecurity;
             if (url) {
                 URL.revokeObjectURL(url);

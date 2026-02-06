@@ -28,12 +28,6 @@
         color: #000000 !important;
         background: transparent !important;
     }
-
-    .variable-highlight {
-        background: #dbeafe !important;
-        color: #1e40af !important;
-        border: 1px solid #93c5fd !important;
-    }
 }
 
 // Template Editor Styles
@@ -471,52 +465,78 @@
     }
 
     .document-preview {
-        max-width: 210mm;
-        min-height: 297mm;
-        margin: 0 auto;
-        background: white;
-        padding: 25mm 20mm;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        font-size: 14px;
-        line-height: 1.8;
-        color: #000;
-        font-family: 'Sarabun', 'Sukhumvit Set', sans-serif;
+    max-width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    background: white;
+    padding: 25mm 20mm;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    font-size: 14px;
+    line-height: 1.8;
+    color: #000;
+    font-family: 'Sarabun', 'Sukhumvit Set', sans-serif;
 
-        ::ng-deep {
-            h1,
-            h2,
-            h3,
-            h4,
-            h5,
-            h6 {
-                color: #000;
-                font-weight: bold;
-                margin-top: 1rem;
-                margin-bottom: 0.75rem;
-            }
+    ::ng-deep {
+        * {
+            color: #000000;
+        }
 
-            h2 {
-                font-size: 1.5rem;
-            }
+        h1, h2, h3, h4, h5, h6 {
+            color: #000 !important;
+            font-weight: bold;
+            margin-top: 1rem;
+            margin-bottom: 0.75rem;
+        }
 
-            p {
-                margin-bottom: 0.75rem;
-            }
+        h1 { font-size: 2em; }
+        h2 { font-size: 1.5em; }
+        h3 { font-size: 1.17em; }
 
-            strong {
-                font-weight: bold;
-            }
+        p {
+            margin-bottom: 0.75rem;
+            color: #000 !important;
+        }
 
-            .variable-highlight {
-                background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-                color: #1e40af;
-                padding: 2px 6px;
-                border-radius: 4px;
-                font-weight: 600;
-                border: 1px solid #93c5fd;
-            }
+        strong {
+            font-weight: bold;
+            color: #000 !important;
+        }
+
+        em {
+            font-style: italic;
+        }
+
+        u {
+            text-decoration: underline;
+        }
+
+        // รักษา Quill alignment
+        .ql-align-center {
+            text-align: center !important;
+        }
+
+        .ql-align-right {
+            text-align: right !important;
+        }
+
+        .ql-align-justify {
+            text-align: justify !important;
+        }
+
+        // รักษา Quill indent
+        .ql-indent-1 {
+            padding-left: 3em !important;
+        }
+
+        .ql-indent-2 {
+            padding-left: 6em !important;
+        }
+
+        .ql-indent-3 {
+            padding-left: 9em !important;
         }
     }
+}
 }
 
 .editor-footer,
