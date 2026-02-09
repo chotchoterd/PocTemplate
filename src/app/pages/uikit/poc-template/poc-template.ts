@@ -37,21 +37,22 @@ interface TemplateVariable {
 export class PocTemplate {
     @ViewChild('pdfPreview') pdfPreviewElement!: ElementRef;
 
-    public editorData = `
-    <h2 style="text-align: center;">หนังสือรับรองการทำงาน</h2>
-    <p style="text-align: right;">วันที่ {{current_date}}</p>
-    <br/>
-    <p style="text-indent: 2em;">ข้าพเจ้า บริษัท {{company_name}} ตั้งอยู่เลขที่ {{company_address}} ขอรับรองว่า</p>
-    <br/>
-    <p style="text-indent: 2em;"><strong>นาย/นาง/นางสาว {{employee_name}}</strong> รหัสพนักงาน <strong>{{employee_id}}</strong> ตำแหน่ง <strong>{{employee_position}}</strong> สังกัด{{employee_department}} ได้เข้าทำงานกับบริษัทฯ ตั้งแต่วันที่ {{start_date}} จนถึงปัจจุบัน โดยได้รับเงินเดือน <strong>{{salary}}</strong> บาทต่อเดือน</p>
-    <br/>
-    <p style="text-indent: 2em;">จึงเรียนมาเพื่อโปรดทราบ</p>
-    <br/><br/><br/>
-    <p style="text-align: center;">ลงชื่อ .......................................</p>
-    <p style="text-align: center;">(.......................................)</p>
-    <p style="text-align: center;">ผู้มีอำนาจลงนาม</p>
-    <p style="text-align: center;">บริษัท {{company_name}}</p>
-  `;
+    public editorData = ``;
+    //     public editorData = `
+    //     <h2 style="text-align: center;">หนังสือรับรองการทำงาน</h2>
+    //     <p style="text-align: right;">วันที่ {{current_date}}</p>
+    //     <br/>
+    //     <p style="text-indent: 2em;">ข้าพเจ้า บริษัท {{company_name}} ตั้งอยู่เลขที่ {{company_address}} ขอรับรองว่า</p>
+    //     <br/>
+    //     <p style="text-indent: 2em;"><strong>นาย/นาง/นางสาว {{employee_name}}</strong> รหัสพนักงาน <strong>{{employee_id}}</strong> ตำแหน่ง <strong>{{employee_position}}</strong> สังกัด{{employee_department}} ได้เข้าทำงานกับบริษัทฯ ตั้งแต่วันที่ {{start_date}} จนถึงปัจจุบัน โดยได้รับเงินเดือน <strong>{{salary}}</strong> บาทต่อเดือน</p>
+    //     <br/>
+    //     <p style="text-indent: 2em;">จึงเรียนมาเพื่อโปรดทราบ</p>
+    //     <br/><br/><br/>
+    //     <p style="text-align: center;">ลงชื่อ .......................................</p>
+    //     <p style="text-align: center;">(.......................................)</p>
+    //     <p style="text-align: center;">ผู้มีอำนาจลงนาม</p>
+    //     <p style="text-align: center;">บริษัท {{company_name}}</p>
+    //   `;
 
     public previewData = '';
     public showPreview = false;
@@ -99,7 +100,6 @@ export class PocTemplate {
 
     updatePreview() {
         let preview = this.editorData;
-        // console.log('Updating preview with editor data:', this.editorData);
         // แทนที่ตัวแปรด้วยค่าจริงเฉยๆ ไม่มี highlight
         Object.keys(this.exampleValues).forEach((key) => {
             const regex = new RegExp(`{{${key}}}`, 'g');
@@ -117,7 +117,6 @@ export class PocTemplate {
         }
     }
 
-    // ฟังก์ชันแปลง Quill classes เป็น inline styles
     private convertQuillToInlineStyles(element: HTMLElement): HTMLElement {
         const cloned = element.cloneNode(true) as HTMLElement;
 
@@ -149,8 +148,8 @@ export class PocTemplate {
                     'font-style',
                     'font-size',
                     'font-family',
-                    'color',
-                    'background-color',
+                    'color',                    // เก็บสี
+                    'background-color',         // เก็บพื้นหลัง
                     'padding-left',
                     'padding-right',
                     'padding-top',
@@ -162,41 +161,16 @@ export class PocTemplate {
 
                 importantStyles.forEach(prop => {
                     const value = computed.getPropertyValue(prop);
-                    if (value &&
-                        value !== 'none' &&
-                        value !== 'normal' &&
-                        value !== 'auto' &&
-                        value !== 'rgba(0, 0, 0, 0)' &&
-                        value !== 'transparent') {
+                    // ไม่กรองสี - เอาทุกอย่าง
+                    if (value && value !== 'none' && value !== 'normal' && value !== 'auto') {
                         el.style.setProperty(prop, value);
                     }
                 });
 
-                // บังคับ styles เฉพาะ tags
-                if (el.tagName === 'P') {
-                    if (!el.style.lineHeight) el.style.lineHeight = '1.8';
-                    if (!el.style.marginBottom) el.style.marginBottom = '1em';
-                    if (!el.style.color || el.style.color === 'rgb(0, 0, 0)') {
-                        el.style.color = '#000000';
-                    }
-                }
-
-                if (el.tagName === 'STRONG') {
-                    el.style.fontWeight = 'bold';
-                    if (!el.style.color) el.style.color = '#000000';
-                }
-
-                if (el.tagName.match(/^H[1-6]$/)) {
-                    el.style.marginTop = '1.5rem';
-                    el.style.marginBottom = '1rem';
-                    el.style.fontWeight = 'bold';
-                    if (!el.style.color) el.style.color = '#000000';
-                }
-
-                // บังคับลบ background ที่ไม่ต้องการ
-                if (el.tagName === 'SPAN' && !el.style.backgroundColor) {
-                    el.style.backgroundColor = 'transparent';
-                }
+                // ลบส่วนที่บังคับสีดำออก
+                // if (!el.style.color || el.style.color === 'rgb(0, 0, 0)') {
+                //     el.style.color = '#000000';
+                // }
             }
 
             // Process children recursively
@@ -215,16 +189,12 @@ export class PocTemplate {
         setTimeout(async () => {
             try {
                 const element = this.pdfPreviewElement.nativeElement;
-
-                // Clone และแปลง styles
                 const clonedElement = element.cloneNode(true) as HTMLElement;
 
-                // แปลง computed styles เป็น inline styles ทั้งหมด
                 const copyStyles = (source: Element, target: Element) => {
                     if (source instanceof HTMLElement && target instanceof HTMLElement) {
                         const computed = window.getComputedStyle(source);
 
-                        // คัดลอกทุก style ที่สำคัญ
                         const stylesToCopy = [
                             'font-family', 'font-size', 'font-weight', 'font-style',
                             'color', 'background-color',
@@ -239,12 +209,11 @@ export class PocTemplate {
 
                         stylesToCopy.forEach(prop => {
                             const value = computed.getPropertyValue(prop);
-                            if (value && value !== 'none' && value !== 'normal') {
+                            if (value && value !== 'none' && value !== 'normal' && value !== 'rgba(0, 0, 0, 0)') {
                                 target.style.setProperty(prop, value, 'important');
                             }
                         });
 
-                        // แปลง Quill classes เป็น inline styles
                         if (target.classList.contains('ql-align-center')) {
                             target.style.setProperty('text-align', 'center', 'important');
                         }
@@ -260,14 +229,8 @@ export class PocTemplate {
                         if (target.classList.contains('ql-indent-2')) {
                             target.style.setProperty('padding-left', '6em', 'important');
                         }
-
-                        // บังคับสีดำสำหรับข้อความ
-                        if (!target.style.color || target.style.color === 'rgb(0, 0, 0)') {
-                            target.style.setProperty('color', '#000000', 'important');
-                        }
                     }
 
-                    // Recursive สำหรับ children
                     Array.from(source.children).forEach((child, index) => {
                         if (target.children[index]) {
                             copyStyles(child, target.children[index]);
@@ -277,7 +240,6 @@ export class PocTemplate {
 
                 copyStyles(element, clonedElement);
 
-                // สร้าง temp container
                 const tempContainer = document.createElement('div');
                 tempContainer.style.cssText = `
                 position: fixed;
@@ -294,10 +256,8 @@ export class PocTemplate {
                 tempContainer.appendChild(clonedElement);
                 document.body.appendChild(tempContainer);
 
-                // รอให้ render
                 await new Promise(resolve => setTimeout(resolve, 500));
 
-                // สร้าง canvas
                 const canvas = await html2canvas(clonedElement, {
                     scale: 2,
                     useCORS: true,
@@ -310,10 +270,9 @@ export class PocTemplate {
                     windowHeight: clonedElement.scrollHeight
                 });
 
-                // ลบ temp container
                 document.body.removeChild(tempContainer);
 
-                // สร้าง PDF
+                // แก้การคำนวณ PDF
                 const pdf = new jsPDF({
                     orientation: 'portrait',
                     unit: 'mm',
@@ -321,27 +280,30 @@ export class PocTemplate {
                     compress: true
                 });
 
-                const imgWidth = 210;
-                const pageHeight = 297;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                let heightLeft = imgHeight;
-                let position = 0;
+                const pageWidth = 210;  // A4 width
+                const pageHeight = 297; // A4 height
 
-                // หน้าแรก
-                pdf.addImage(
-                    canvas.toDataURL('image/jpeg', 0.95),
-                    'JPEG',
-                    0,
-                    position,
-                    imgWidth,
-                    imgHeight
-                );
-                heightLeft -= pageHeight;
+                // คำนวณขนาดรูปที่จะใส่ใน PDF
+                const imgWidth = pageWidth;
+                const imgHeight = (canvas.height * pageWidth) / canvas.width;
 
-                // หน้าถัดไป (ถ้ามี)
-                while (heightLeft >= 0) {
-                    position = heightLeft - imgHeight;
-                    pdf.addPage();
+                // เช็คว่าสูงเกิน 1 หน้าไหม
+                if (imgHeight <= pageHeight) {
+                    // ใส่ได้หน้าเดียว
+                    pdf.addImage(
+                        canvas.toDataURL('image/jpeg', 0.95),
+                        'JPEG',
+                        0,
+                        0,
+                        imgWidth,
+                        imgHeight
+                    );
+                } else {
+                    // ต้องแบ่งหลายหน้า
+                    let heightLeft = imgHeight;
+                    let position = 0;
+
+                    // หน้าแรก
                     pdf.addImage(
                         canvas.toDataURL('image/jpeg', 0.95),
                         'JPEG',
@@ -351,6 +313,21 @@ export class PocTemplate {
                         imgHeight
                     );
                     heightLeft -= pageHeight;
+
+                    // หน้าถัดไป
+                    while (heightLeft > 0) {
+                        position = heightLeft - imgHeight;
+                        pdf.addPage();
+                        pdf.addImage(
+                            canvas.toDataURL('image/jpeg', 0.95),
+                            'JPEG',
+                            0,
+                            position,
+                            imgWidth,
+                            imgHeight
+                        );
+                        heightLeft -= pageHeight;
+                    }
                 }
 
                 const pdfBlob = pdf.output('blob');
@@ -378,7 +355,6 @@ export class PocTemplate {
                 const element = this.pdfPreviewElement.nativeElement;
                 const clonedElement = element.cloneNode(true) as HTMLElement;
 
-                // ใช้ฟังก์ชัน copyStyles เหมือนกับ generatePDF
                 const copyStyles = (source: Element, target: Element) => {
                     if (source instanceof HTMLElement && target instanceof HTMLElement) {
                         const computed = window.getComputedStyle(source);
@@ -397,7 +373,7 @@ export class PocTemplate {
 
                         stylesToCopy.forEach(prop => {
                             const value = computed.getPropertyValue(prop);
-                            if (value && value !== 'none' && value !== 'normal') {
+                            if (value && value !== 'none' && value !== 'normal' && value !== 'rgba(0, 0, 0, 0)') {
                                 target.style.setProperty(prop, value, 'important');
                             }
                         });
@@ -416,10 +392,6 @@ export class PocTemplate {
                         }
                         if (target.classList.contains('ql-indent-2')) {
                             target.style.setProperty('padding-left', '6em', 'important');
-                        }
-
-                        if (!target.style.color || target.style.color === 'rgb(0, 0, 0)') {
-                            target.style.setProperty('color', '#000000', 'important');
                         }
                     }
 
@@ -464,6 +436,7 @@ export class PocTemplate {
 
                 document.body.removeChild(tempContainer);
 
+                // แก้การคำนวณ PDF
                 const pdf = new jsPDF({
                     orientation: 'portrait',
                     unit: 'mm',
@@ -471,20 +444,49 @@ export class PocTemplate {
                     compress: true
                 });
 
-                const imgWidth = 210;
+                const pageWidth = 210;
                 const pageHeight = 297;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                let heightLeft = imgHeight;
-                let position = 0;
+                const imgWidth = pageWidth;
+                const imgHeight = (canvas.height * pageWidth) / canvas.width;
 
-                pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
+                if (imgHeight <= pageHeight) {
+                    // ใส่ได้หน้าเดียว
+                    pdf.addImage(
+                        canvas.toDataURL('image/jpeg', 0.95),
+                        'JPEG',
+                        0,
+                        0,
+                        imgWidth,
+                        imgHeight
+                    );
+                } else {
+                    // ต้องแบ่งหลายหน้า
+                    let heightLeft = imgHeight;
+                    let position = 0;
 
-                while (heightLeft >= 0) {
-                    position = heightLeft - imgHeight;
-                    pdf.addPage();
-                    pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, position, imgWidth, imgHeight);
+                    pdf.addImage(
+                        canvas.toDataURL('image/jpeg', 0.95),
+                        'JPEG',
+                        0,
+                        position,
+                        imgWidth,
+                        imgHeight
+                    );
                     heightLeft -= pageHeight;
+
+                    while (heightLeft > 0) {
+                        position = heightLeft - imgHeight;
+                        pdf.addPage();
+                        pdf.addImage(
+                            canvas.toDataURL('image/jpeg', 0.95),
+                            'JPEG',
+                            0,
+                            position,
+                            imgWidth,
+                            imgHeight
+                        );
+                        heightLeft -= pageHeight;
+                    }
                 }
 
                 const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
